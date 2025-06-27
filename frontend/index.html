@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ICONIC</title>
+
+
+  <style>
+    :root {
+      color-scheme: light;
+    }
+  </style>
+
+  <!-- Tailwind via CDN (funcional e simples) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#A557F2",
+            hover: "#C17FF5",
+          },
+          keyframes: {
+            "gradient-pan": {
+              "0%, 100%": { "background-position": "0% 50%" },
+              "50%": { "background-position": "100% 50%" },
+            },
+            "gradient-border": {
+              "0%, 100%": { "background-position": "0% 50%" },
+              "50%": { "background-position": "100% 50%" },
+            },
+          },
+          animation: {
+            "gradient-pan": "gradient-pan 3s ease infinite",
+            "gradient-border": "gradient-border 4s ease infinite",
+          },
+        },
+      },
+    };
+  </script>
+
+</head>
+
+<body class="bg-gray-50">
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

@@ -1,0 +1,248 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+}
+
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DIRECT_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+/// ==============================================================
+///  * USER
+///  * ==============================================================
+model User {
+  id                      String                 @id @default(uuid())
+  full_name               String
+  email                   String                 @unique
+  phone_number            String?
+  instagram               String?
+  nickname                String                 @unique @db.VarChar(30)
+  profile_picture_url     String?
+  bio                     String?
+  show_public_profile     Boolean                @default(true)
+  show_profile_to_iconics Boolean                @default(true)
+  is_iconic               Boolean                @default(false)
+  iconic_expires_at       DateTime?
+  role                    Role                   @default(user)
+  date_of_birth           DateTime?
+  created_at              DateTime               @default(now())
+  updated_at              DateTime               @updatedAt
+  ownedEvents             Event[]                @relation("Owner")
+  admin_checkins          EventCheckin[]         @relation("AdminCheckin")
+  checkins                EventCheckin[]
+  participations          EventParticipation[]
+  iconicChatMessages      IconicChatMessage[]
+  matchParticipations     LiveMatchParticipant[]
+  pollResponses           LivePollResponse[]
+  photos                  UserPhoto[]
+
+  @@map("User")
+}
+
+/// ==============================================================
+///  * USER PHOTO
+///  * ==============================================================
+model UserPhoto {
+  id         String   @id @default(uuid())
+  user_id    String
+  url        String   @db.VarChar(2048)
+  position   Int
+  created_at DateTime @default(now())
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, url])
+  @@unique([user_id, position])
+}
+
+/// ==============================================================
+///  * EVENT  (presencial)
+///  * ==============================================================
+model Event {
+  id                String               @id @default(uuid())
+  owner_id          String
+  title             String               @db.VarChar(120)
+  description       String
+  location          String               @db.VarChar(200)
+  category          EventCategory
+  is_exclusive      Boolean
+  is_public         Boolean              @default(false)
+  max_attendees     Int
+  current_attendees Int                  @default(0)
+  partner_name      String?              @db.VarChar(100)
+  partner_logo_url  String?
+  cover_image_url   String
+  created_at        DateTime             @default(now())
+  end_at            DateTime?
+  start_at          DateTime
+  /// *  NOVOS CAMPOS  *
+  lat               Float?
+  lon               Float?
+  owner             User                 @relation("Owner", fields: [owner_id], references: [id])
+  checkins          EventCheckin[]
+  participations    EventParticipation[]
+  liveEvents        LiveEvent[]
+
+  @@index([owner_id])
+}
+
+/// ==============================================================
+///  * EVENT PARTICIPATION
+///  * ==============================================================
+model EventParticipation {
+  id           String              @id @default(uuid())
+  user_id      String
+  event_id     String
+  status       ParticipationStatus
+  created_at   DateTime            @default(now())
+  cancelled_at DateTime?
+  event        Event               @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  user         User                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, event_id])
+  @@index([user_id, event_id])
+}
+
+/// ==============================================================
+///  * EVENT CHECK-IN
+///  * ==============================================================
+model EventCheckin {
+  id                  String   @id @default(uuid())
+  event_id            String
+  user_id             String
+  qr_token            String   @unique @db.VarChar(64)
+  scanned_by_admin_id String?
+  checkin_time        DateTime @default(dbgenerated("'1970-01-01 00:00:00+00'::timestamp with time zone"))
+  created_at          DateTime @default(now())
+  event               Event    @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  scanned_by          User?    @relation("AdminCheckin", fields: [scanned_by_admin_id], references: [id])
+  user                User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([event_id, user_id])
+}
+
+/// ==============================================================
+///  * ICONIC CHAT MESSAGE
+///  * ==============================================================
+model IconicChatMessage {
+  id         String   @id @default(uuid())
+  user_id    String
+  message    String
+  created_at DateTime @default(now())
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+/// ==============================================================
+///  * LIVE EVENT (dinâmica)
+///  * ==============================================================
+model LiveEvent {
+  id          String           @id @default(uuid())
+  event_id    String
+  title       String           @db.VarChar(120)
+  is_active   Boolean          @default(false)
+  require_qr  Boolean          @default(false)
+  started_at  DateTime?
+  ended_at    DateTime?
+  created_at  DateTime         @default(now())
+  event       Event            @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  matchGroups LiveMatchGroup[]
+  polls       LivePoll[]
+
+  @@index([event_id])
+}
+
+/// ==============================================================
+///  * LIVE POLL
+///  * ==============================================================
+model LivePoll {
+  id               String             @id @default(uuid())
+  live_event_id    String
+  question         String
+  duration_sec     Int
+  state_live_event Int
+  started_at       DateTime?
+  ended_at         DateTime?
+  created_at       DateTime           @default(now())
+  liveEvent        LiveEvent          @relation(fields: [live_event_id], references: [id], onDelete: Cascade)
+  options          LivePollOption[]
+  responses        LivePollResponse[]
+
+  @@index([live_event_id])
+}
+
+model LivePollOption {
+  id               String             @id @default(uuid())
+  poll_id          String
+  text             String
+  poll             LivePoll           @relation(fields: [poll_id], references: [id], onDelete: Cascade)
+  LivePollResponse LivePollResponse[]
+
+  @@index([poll_id])
+}
+
+model LivePollResponse {
+  id           String         @id @default(uuid())
+  poll_id      String
+  option_id    String
+  user_id      String
+  responded_at DateTime       @default(now())
+  option       LivePollOption @relation(fields: [option_id], references: [id], onDelete: Cascade)
+  poll         LivePoll       @relation(fields: [poll_id], references: [id], onDelete: Cascade)
+  user         User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([poll_id, user_id])
+  @@index([poll_id, option_id])
+}
+
+/// ==============================================================
+///  * LIVE MATCHMAKING
+///  * ==============================================================
+model LiveMatchGroup {
+  id               String                 @id @default(uuid())
+  live_event_id    String
+  started_at       DateTime?
+  duration_sec     Int
+  state_live_event Int
+  ended_at         DateTime?
+  group_number     Int
+  liveEvent        LiveEvent              @relation(fields: [live_event_id], references: [id], onDelete: Cascade)
+  participants     LiveMatchParticipant[]
+
+  @@index([live_event_id])
+}
+
+model LiveMatchParticipant {
+  id             String         @id @default(uuid())
+  match_group_id String
+  user_id        String
+  matchGroup     LiveMatchGroup @relation(fields: [match_group_id], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([match_group_id, user_id])
+  @@index([match_group_id])
+}
+
+/// ==============================================================
+///  * ENUMS
+///  * ==============================================================
+enum Role {
+  user
+  iconic
+  admin
+  scanner
+}
+
+enum EventCategory {
+  party
+  drop
+  dinner
+  fashion_show
+  other
+}
+
+enum ParticipationStatus {
+  confirmed
+  cancelled
+}
