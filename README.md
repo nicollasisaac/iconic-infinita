@@ -214,8 +214,8 @@ Our passionate and multidisciplinary team combines expertise in blockchain devel
 - 
 ## 🔗 Links
 
-- **Live Demo**: [iconic-seven.vercel.app](https://iconicxp.netlify.app/)
-- **GitHub Repository**: [github.com/iconic-team-ofc/iconic](https://github.com/nicollasisaac/iconic-infinita.git)
+- **Live Demo**: [iconicxp.netlify.app](https://iconicxp.netlify.app/)
+- **GitHub Repository**: [github.com/nicollasisaac/iconic-infinita](https://github.com/nicollasisaac/iconic-infinita.git)
 - **DEMO VIDEO**: [YouTube](https://www.youtube.com/watch?v=61X6j7rp7j8)
 ---
 
